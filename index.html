@@ -7,10 +7,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
-    <header class="p-4 text-center bg-gray-900 border-b border-gray-800 shadow-md">
-        <h1 class="text-2xl font-bold text-red-600 flex items-center justify-center gap-2">
+    <header class="p-4 bg-gray-900 border-b border-gray-800 shadow-md flex flex-col md:flex-row items-center justify-between gap-4">
+        <h1 class="text-2xl font-bold text-red-600 flex items-center gap-2">
             🎬 FilmFlex360
         </h1>
+        <!-- Search Bar -->
+        <div class="w-full md:w-96">
+            <input type="text" id="search-input" oninput="filterMovies()" placeholder="Search movies..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-red-600">
+        </div>
     </header>
     
     <main class="container mx-auto p-4">
@@ -18,40 +22,53 @@
             <!-- Dynamic Movies Injected Here -->
         </div>
         <div class="text-center my-8">
-            <button id="load-more" onclick="loadMoreMovies()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded text-sm hidden">Load More Movies</button>
+            <button id="load-more" onclick="loadMoreMovies()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded text-sm">Load More Movies</button>
         </div>
     </main>
 
-    <!-- Video Modal -->
+    <!-- Video / Download Modal -->
     <div id="video-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
-        <div class="bg-gray-900 rounded-lg overflow-hidden max-w-2xl w-full border border-gray-800 relative">
+        <div class="bg-gray-900 rounded-lg overflow-hidden max-w-md w-full border border-gray-800 relative p-6">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl font-bold bg-gray-800 px-3 py-1 rounded-full">✕</button>
-            <div class="p-4">
-                <h2 id="modal-title" class="text-lg font-bold mb-3 text-red-500"></h2>
-                <div class="mt-4 flex justify-end gap-2">
-                    <a id="modal-download" href="#" target="_blank" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded">Open / Download Link</a>
-                </div>
+            <h2 id="modal-title" class="text-lg font-bold mb-4 text-red-500"></h2>
+            <p class="text-xs text-gray-400 mb-6">Click below to stream or download this movie securely:</p>
+            <div class="flex flex-col gap-3">
+                <a id="modal-link" href="#" target="_blank" class="text-center bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded text-sm transition">⚡ Watch / Download Now</a>
+                <button onclick="closeModal()" class="text-center bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 rounded text-xs">Cancel</button>
             </div>
         </div>
     </div>
 
     <script>
         let allMovies = [];
+        let filteredMovies = [];
         let currentIndex = 0;
-        const limit = 16; // Chota chunk rakha hai taake mobile par load na pare
+        const limit = 20;
 
         fetch('movies.json')
             .then(res => res.json())
             .then(data => {
                 allMovies = data;
+                filteredMovies = data;
                 displayMovies();
             })
             .catch(err => console.error("Error loading movies:", err));
 
-        function displayMovies() {
+        function displayMovies(reset = false) {
             const grid = document.getElementById('movie-grid');
-            const nextBatch = allMovies.slice(currentIndex, currentIndex + limit);
+            if (reset) {
+                grid.innerHTML = "";
+                currentIndex = 0;
+            }
+
+            const nextBatch = filteredMovies.slice(currentIndex, currentIndex + limit);
             
+            if (nextBatch.length === 0 && currentIndex === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">No movies found.</p>`;
+                document.getElementById('load-more').style.display = 'none';
+                return;
+            }
+
             let htmlContent = "";
             nextBatch.forEach(movie => {
                 htmlContent += `
@@ -64,7 +81,7 @@
                             </div>
                         </div>
                         <div class="p-3 pt-0">
-                            <button onclick="openModal('${encodeURIComponent(movie.title || '')}', '${movie.download || ''}')" class="w-full text-center bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded">Watch / Details</button>
+                            <button onclick="openModal('${encodeURIComponent(movie.title || '')}', '${movie.download || ''}')" class="w-full text-center bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded">Play / Download</button>
                         </div>
                     </div>
                 `;
@@ -74,7 +91,7 @@
             currentIndex += limit;
 
             const loadMoreBtn = document.getElementById('load-more');
-            if (currentIndex < allMovies.length) {
+            if (currentIndex < filteredMovies.length) {
                 loadMoreBtn.style.display = 'inline-block';
             } else {
                 loadMoreBtn.style.display = 'none';
@@ -82,16 +99,24 @@
         }
 
         function loadMoreMovies() {
-            displayMovies();
+            displayMovies(false);
+        }
+
+        function filterMovies() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            filteredMovies = allMovies.filter(movie => 
+                (movie.title && movie.title.toLowerCase().includes(query))
+            );
+            displayMovies(true);
         }
 
         function openModal(title, link) {
             const modal = document.getElementById('video-modal');
             const modalTitle = document.getElementById('modal-title');
-            const modalDownload = document.getElementById('modal-download');
+            const modalLink = document.getElementById('modal-link');
             
             modalTitle.innerText = decodeURIComponent(title);
-            modalDownload.href = link || '#';
+            modalLink.href = link && link !== 'undefined' && link !== '' ? link : '#';
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
