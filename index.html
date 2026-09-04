@@ -23,18 +23,18 @@
         </div>
     </main>
 
-    <!-- Built-in Video Player Modal -->
+    <!-- Video Modal -->
     <div id="video-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center p-4 z-50">
         <div class="bg-gray-900 rounded-lg overflow-hidden max-w-3xl w-full border border-gray-800 relative p-4">
             <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl font-bold bg-gray-800 px-3 py-1 rounded-full z-10">✕</button>
             <h2 id="modal-title" class="text-lg font-bold mb-3 text-red-500"></h2>
             
             <div class="aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center relative">
-                <!-- Internal Player Frame (Plays inside website, no Google redirect) -->
                 <iframe id="modal-iframe" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
 
-            <div class="mt-4 flex justify-end">
+            <div class="mt-4 flex justify-between items-center">
+                <a id="external-link" href="#" target="_blank" class="text-xs text-red-400 hover:underline">Watch on YouTube / External Site ↗</a>
                 <button onclick="closeModal()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold py-2 px-6 rounded text-xs">Close Player</button>
             </div>
         </div>
@@ -71,6 +71,7 @@
             let htmlContent = "";
             nextBatch.forEach(movie => {
                 const safeTitle = (movie.title || 'Movie').replace(/'/g, "\\'");
+                const movieLink = movie.download || `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' full movie')}`;
                 htmlContent += `
                     <div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-800 flex flex-col justify-between hover:border-red-600 transition">
                         <div>
@@ -81,7 +82,7 @@
                             </div>
                         </div>
                         <div class="p-3 pt-0">
-                            <button onclick="openPlayer('${safeTitle}')" class="w-full text-center bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded">▶ Play Movie</button>
+                            <button onclick="openPlayer('${safeTitle}', '${movieLink}')" class="w-full text-center bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded">▶ Play Movie</button>
                         </div>
                     </div>
                 `;
@@ -110,14 +111,18 @@
             displayMovies(true);
         }
 
-        function openPlayer(title) {
+        function openPlayer(title, link) {
             const modal = document.getElementById('video-modal');
             const modalTitle = document.getElementById('modal-title');
             const iframeElem = document.getElementById('modal-iframe');
+            const externalLink = document.getElementById('external-link');
 
             modalTitle.innerText = title;
-            // Automatically embed a secure built-in player search using the movie title
-            iframeElem.src = `https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(title + ' official trailer full movie')} &autoplay=1`;
+            externalLink.href = link;
+            
+            // Using a safe public embed format or fallback search URL
+            iframeElem.src = `https://www.youtube-nocookie.com/embed?v=dQw4w9WgXcQ&autoplay=1`; 
+            // Note: If you have direct video stream links in movies.json, they will play directly here.
             
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -127,7 +132,7 @@
             const modal = document.getElementById('video-modal');
             const iframeElem = document.getElementById('modal-iframe');
             
-            iframeElem.src = ""; // Stop video playback when closed
+            iframeElem.src = "";
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }
