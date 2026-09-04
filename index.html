@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Movie Hub</title>
+    <title>FilmFlex360 - Free Movies & Series</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
-<body class="bg-gray-950 text-white min-p-6">
-    <header class="p-4 text-center bg-gray-900 border-b border-gray-800">
-        <h1 class="text-2xl font-bold text-red-500">🎬 CineHub Free Movies</h1>
+<body class="bg-gray-950 text-white min-h-screen">
+    <header class="p-4 text-center bg-gray-900 border-b border-gray-800 shadow-md">
+        <h1 class="text-2xl font-bold text-red-600 flex items-center justify-center gap-2">
+            🎬 FilmFlex360
+        </h1>
     </header>
     
     <main class="container mx-auto p-4">
@@ -17,6 +19,23 @@
         </div>
     </main>
 
+    <!-- Video Modal -->
+    <div id="video-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50">
+        <div class="bg-gray-900 rounded-lg overflow-hidden max-w-2xl w-full border border-gray-800 relative">
+            <button onclick="closeModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl font-bold bg-gray-800 px-3 py-1 rounded-full">✕</button>
+            <div class="p-4">
+                <h2 id="modal-title" class="text-lg font-bold mb-3 text-red-500"></h2>
+                <div class="aspect-video bg-black flex items-center justify-center rounded overflow-hidden">
+                    <iframe id="modal-iframe" class="w-full h-full hidden" src="" frameborder="0" allowfullscreen></iframe>
+                    <p id="modal-fallback" class="text-gray-400 text-sm hidden">Direct streaming link not available. Click download below.</p>
+                </div>
+                <div class="mt-4 flex justify-end gap-2">
+                    <a id="modal-download" href="#" target="_blank" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded">Open / Download Link</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         fetch('movies.json')
             .then(res => res.json())
@@ -24,21 +43,38 @@
                 const grid = document.getElementById('movie-grid');
                 data.forEach(movie => {
                     grid.innerHTML += `
-                        <div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-800 flex flex-col justify-between">
+                        <div class="bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-800 flex flex-col justify-between hover:border-red-600 transition">
                             <div>
                                 <img src="${movie.poster}" alt="${movie.title}" class="w-full h-64 object-cover">
                                 <div class="p-3">
-                                    <h2 class="font-bold text-sm truncate">${movie.title} (${movie.year})</h2>
-                                    <p class="text-xs text-yellow-400 mt-1">⭐ ${movie.rating}</p>
+                                    <h2 class="font-bold text-sm truncate">${movie.title} (${movie.year || ''})</h2>
+                                    <p class="text-xs text-yellow-400 mt-1">⭐ ${movie.rating || 'N/A'}</p>
                                 </div>
                             </div>
                             <div class="p-3 pt-0">
-                                <a href="${movie.download}" target="_blank" class="block text-center bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded">Download / Watch</a>
+                                <button onclick="openModal('${encodeURIComponent(movie.title)}', '${movie.download || ''}')" class="w-full text-center bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 rounded">Watch / Details</button>
                             </div>
                         </div>
                     `;
                 });
             });
+
+        function openModal(title, link) {
+            const modal = document.getElementById('video-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalDownload = document.getElementById('modal-download');
+            
+            modalTitle.innerText = decodeURIComponent(title);
+            modalDownload.href = link || '#';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('video-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
     </script>
 </body>
 </html>
