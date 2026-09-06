@@ -3,25 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Details - TMDB</title>
+    <title>TMDB Movie & Web Series Hub (2026)</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        body { background-color: #0d253f; color: #fff; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .container { width: 100%; max-width: 1000px; padding: 20px; }
-        .search-box { margin-bottom: 20px; display: flex; gap: 10px; }
-        .search-box input { flex: 1; padding: 10px; border-radius: 5px; border: none; font-size: 16px; }
-        .search-box button { padding: 10px 20px; background: #01b4e4; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0d253f; color: #fff; min-height: 100vh; }
         
-        .movie-card { position: relative; background-size: cover; background-position: center; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: none; }
-        .movie-card::before { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(13, 37, 63, 0.85); z-index: 1; }
+        /* Navbar */
+        nav { background-color: #032541; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+        .logo { font-size: 24px; font-weight: bold; color: #01b4e4; cursor: pointer; }
+        .search-container { position: relative; width: 300px; }
+        .search-container input { width: 100%; padding: 10px 15px; border-radius: 20px; border: none; outline: none; font-size: 14px; }
+        
+        /* Main Container */
+        .container { max-width: 1200px; margin: auto; padding: 30px 20px; }
+        .section-title { font-size: 22px; font-weight: bold; margin-bottom: 20px; border-left: 4px solid #01b4e4; padding-left: 10px; }
+        
+        /* Movie Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .card { background: #11253a; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        .card img { width: 100%; height: 300px; object-fit: cover; }
+        .card-info { padding: 15px; }
+        .card-title { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px; }
+        .card-date { font-size: 13px; color: #aaa; }
+
+        /* Detail Modal View */
+        #detailView { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(13,37,63,0.95); z-index: 100; overflow-y: auto; padding: 40px 20px; }
+        .back-btn { background: #01b4e4; border: none; color: white; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-bottom: 20px; }
+        .movie-card-detail { background-size: cover; background-position: center; border-radius: 10px; overflow: hidden; position: relative; box-shadow: 0 4px 25px rgba(0,0,0,0.7); }
+        .movie-card-detail::before { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(13, 37, 63, 0.9); z-index: 1; }
         .movie-content { position: relative; z-index: 2; display: flex; flex-wrap: wrap; padding: 40px; gap: 30px; align-items: center; }
-        .poster img { width: 250px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .poster img { width: 280px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .details { flex: 1; min-width: 280px; }
         .title { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
         .meta { font-size: 14px; color: #ccc; margin-bottom: 20px; }
         .score-row { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
         .score-circle { width: 60px; height: 60px; border-radius: 50%; background: #081c22; border: 4px solid #21d07a; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; }
-        .trailer-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 5px; font-weight: bold; }
+        .trailer-btn { background: #e50914; border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 15px; display: flex; align-items: center; gap: 5px; font-weight: bold; }
         .overview-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
         .overview-text { font-size: 14px; line-height: 1.6; color: #e0e0e0; margin-bottom: 20px; }
         .crew-grid { display: flex; gap: 40px; }
@@ -31,103 +49,170 @@
 </head>
 <body>
 
-<div class="container">
-    <div class="search-box">
-        <input type="text" id="movieIdInput" placeholder="Enter TMDB Movie ID (e.g., 939243 for Mayday or search ID)..." value="939243">
-        <button onclick="fetchMovieDetails()">Load Movie</button>
+    <nav>
+        <div class="logo" onclick="goHome()">TMDB Hub 2026</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search movies, TV shows..." onkeyup="liveSearch(event)">
+        </div>
+    </nav>
+
+    <div class="container" id="homeView">
+        <div class="section-title">Trending 2026 Movies & Web Series</div>
+        <div class="grid" id="mediaGrid"></div>
     </div>
 
-    <div id="movieCard" class="movie-card">
-        <div class="movie-content">
-            <div class="poster">
-                <img id="moviePoster" src="" alt="Movie Poster">
-            </div>
-            <div class="details">
-                <div class="title" id="movieTitle">Loading...</div>
-                <div class="meta" id="movieMeta">--</div>
-                <div class="score-row">
-                    <div class="score-circle" id="userScore">--%</div>
-                    <button class="trailer-btn" onclick="openTrailer()">▶ Play Trailer</button>
+    <div id="detailView">
+        <button class="back-btn" onclick="goHome()">← Back to Home</button>
+        <div id="movieCard" class="movie-card-detail">
+            <div class="movie-content">
+                <div class="poster">
+                    <img id="moviePoster" src="" alt="Poster">
                 </div>
-                <div class="overview-title">Overview</div>
-                <div class="overview-text" id="movieOverview">--</div>
-                <div class="crew-grid" id="crewContainer"></div>
+                <div class="details">
+                    <div class="title" id="movieTitle">Loading...</div>
+                    <div class="meta" id="movieMeta">--</div>
+                    <div class="score-row">
+                        <div class="score-circle" id="userScore">--%</div>
+                        <button class="trailer-btn" onclick="openTrailer()">▶ Play Trailer</button>
+                    </div>
+                    <div class="overview-title">Overview</div>
+                    <div class="overview-text" id="movieOverview">--</div>
+                    <div class="crew-grid" id="crewContainer"></div>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <script>
     const apiKey = "e0454b55527f15c2784604a0bc84df14";
+    let windowTrailerKey = null;
 
-    async function fetchMovieDetails() {
-        const movieId = document.getElementById('movieIdInput').value.trim();
-        if(!movieId) return;
-
+    // Load Trending Movies & Web Series on Start
+    async function loadTrending() {
         try {
-            // Fetch Movie Details
-            const res = await fetch(`https://api.themoviedb.org/3/movie/${movieId}?api_key=${apiKey}`);
+            const res = await fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${apiKey}`);
             const data = await res.json();
-
-            // Fetch Credits (Director/Writer)
-            const creditsRes = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${apiKey}`);
-            const creditsData = await creditsRes.json();
-
-            // Fetch Videos (Trailer)
-            const videoRes = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${apiKey}`);
-            const videoData = await videoRes.json();
-            const trailer = videoData.results.find(v => v.type === "Trailer" && v.site === "YouTube");
-            window.trailerKey = trailer ? trailer.key : null;
-
-            updateUI(data, creditsData);
+            displayGrid(data.results);
         } catch (err) {
-            alert("Error fetching data. Check Movie ID or API Key.");
+            console.error("Error loading trending content:", err);
         }
     }
 
-    function updateUI(movie, credits) {
-        document.getElementById('movieCard').style.display = 'block';
-        
-        // Background & Poster
+    function displayGrid(items) {
+        const grid = document.getElementById('mediaGrid');
+        grid.innerHTML = '';
+        items.forEach(item => {
+            if(!item.poster_path) return;
+            const title = item.title || item.name;
+            const date = item.release_date || item.first_air_date || '';
+            const type = item.media_type || 'movie';
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => fetchDetails(item.id, type);
+            card.innerHTML = `
+                <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="${title}">
+                <div class="card-info">
+                    <div class="card-title">${title}</div>
+                    <div class="card-date">${date}</div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // Live Search Functionality
+    async function liveSearch(e) {
+        const query = e.target.value.trim();
+        if(query.length === 0) {
+            loadTrending();
+            return;
+        }
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            displayGrid(data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv'));
+        } catch (err) {
+            console.error("Search error:", err);
+        }
+    }
+
+    // Fetch Full Details on One Click
+    async function fetchDetails(id, type = 'movie') {
+        document.getElementById('homeView').style.display = 'none';
+        document.getElementById('detailView').style.display = 'block';
+
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${apiKey}`);
+            const movie = await res.json();
+
+            const creditsRes = await fetch(`https://api.themoviedb.org/3/${type}/${id}/credits?api_key=${apiKey}`);
+            const creditsData = await creditsRes.json();
+
+            const videoRes = await fetch(`https://api.themoviedb.org/3/${type}/${id}/videos?api_key=${apiKey}`);
+            const videoData = await videoRes.json();
+            const trailer = videoData.results.find(v => v.type === "Trailer" && v.site === "YouTube");
+            windowTrailerKey = trailer ? trailer.key : null;
+
+            updateDetailUI(movie, creditsData, type);
+        } catch (err) {
+            alert("Error loading details.");
+        }
+    }
+
+    function updateDetailUI(movie, credits, type) {
+        const titleName = movie.title || movie.name;
+        const releaseDate = movie.release_date || movie.first_air_date || '';
+        const year = releaseDate ? releaseDate.split('-')[0] : '';
+
         const backdropUrl = `https://image.tmdb.org/t/p/original${movie.backdrop_path}`;
         document.getElementById('movieCard').style.backgroundImage = `url(${backdropUrl})`;
         document.getElementById('moviePoster').src = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
 
-        // Title & Meta
-        const year = movie.release_date ? movie.release_date.split('-')[0] : '';
-        document.getElementById('movieTitle').innerText = `${movie.title} (${year})`;
-        
-        const runtimeHours = Math.floor(movie.runtime / 60);
-        const runtimeMins = movie.runtime % 60;
-        const genres = movie.genres.map(g => g.name).join(', ');
-        document.getElementById('movieMeta').innerText = `${movie.release_date} • ${genres} • ${runtimeHours}h ${runtimeMins}m`;
+        document.getElementById('movieTitle').innerText = `${titleName} (${year})`;
 
-        // Score
+        let runtimeStr = '';
+        if(movie.runtime) {
+            const h = Math.floor(movie.runtime / 60);
+            const m = movie.runtime % 60;
+            runtimeStr = ` • ${h}h ${m}m`;
+        } else if(movie.episode_run_time && movie.episode_run_time.length > 0) {
+            runtimeStr = ` • ${movie.episode_run_time[0]}m per ep.`;
+        }
+
+        const genres = movie.genres.map(g => g.name).join(', ');
+        document.getElementById('movieMeta').innerText = `${releaseDate} • ${genres}${runtimeStr}`;
+
         const score = Math.round(movie.vote_average * 10);
         document.getElementById('userScore').innerText = `${score}%`;
+        document.getElementById('movieOverview').innerText = movie.overview || "No overview available.";
 
-        // Overview
-        document.getElementById('movieOverview').innerText = movie.overview;
-
-        // Crew (Directors / Writers)
-        const directors = credits.crew.filter(person => person.job === "Director" || person.job === "Writer").slice(0, 2);
+        // Crew / Creators
+        const team = credits.crew.filter(p => p.job === "Director" || p.job === "Writer" || p.job === "Creator").slice(0, 2);
         let crewHtml = '';
-        directors.forEach(d => {
-            crewHtml += `<div class="crew-member"><div class="name">${d.name}</div><div class="role">${d.job}</div></div>`;
+        team.forEach(d => {
+            crewHtml += `<div class="crew-member"><div class="name">${d.name}</div><div class="role">${d.job || 'Creator'}</div></div>`;
         });
         document.getElementById('crewContainer').innerHTML = crewHtml;
     }
 
     function openTrailer() {
-        if(window.trailerKey) {
-            window.open(`https://www.youtube.com/watch?v=${window.trailerKey}`, '_blank');
+        if(windowTrailerKey) {
+            window.open(`https://www.youtube.com/watch?v=${windowTrailerKey}`, '_blank');
         } else {
-            alert("Trailer not available for this movie.");
+            alert("Trailer available nahi hai.");
         }
     }
 
-    // Auto-load default movie on start
-    fetchMovieDetails();
+    function goHome() {
+        document.getElementById('detailView').style.display = 'none';
+        document.getElementById('homeView').style.display = 'block';
+        document.getElementById('searchInput').value = '';
+        loadTrending();
+    }
+
+    // Initial Load
+    loadTrending();
 </script>
 
 </body>
